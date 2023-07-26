@@ -3,12 +3,13 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from flask import render_template, redirect, request, url_for
+from flask import render_template, redirect, request, url_for,flash
 from flask_login import (
     current_user,
     login_user,
     logout_user
 )
+from functools import wraps
 
 from apps import db, login_manager
 from apps.authentication import blueprint
@@ -118,3 +119,12 @@ def not_found_error(error):
 @blueprint.errorhandler(500)
 def internal_error(error):
     return render_template('home/page-500.html'), 500
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def decorated_view(*args, **kwargs):
+        if not current_user.is_admin:
+            flash('You need admin privileges to access this page.', 'danger')
+            return redirect(url_for('login')) 
+        return view_func(*args, **kwargs)
+    return decorated_view
